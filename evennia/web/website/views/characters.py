@@ -252,7 +252,7 @@ class CharacterCreateView(CharacterMixin, ObjectCreateView):
         charname = self.attributes.pop("db_key")
         description = self.attributes.pop("desc")
         # Create a character
-        character, errors = self.typeclass.create(charname, account, description=description)
+        character, errors = self.request.user.create_character(key=charname, description=description)
 
         if errors:
             # Echo error messages to the user

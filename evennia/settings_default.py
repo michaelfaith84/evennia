@@ -181,7 +181,11 @@ TIME_ZONE = "UTC"
 # Activate time zone in datetimes
 USE_TZ = True
 # Authentication backends. This is the code used to authenticate a user.
-AUTHENTICATION_BACKENDS = ["evennia.web.utils.backends.CaseInsensitiveModelBackend"]
+AUTHENTICATION_BACKENDS = [
+    "evennia.web.utils.backends.CaseInsensitiveModelBackend",
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
 # Language code for this installation. All choices can be found here:
 # http://www.w3.org/TR/REC-html40/struct/dirlang.html#langcodes
 LANGUAGE_CODE = "en-us"
@@ -1003,6 +1007,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "sekizai.context_processors.sekizai",
                 "evennia.web.utils.general_context.general_context",
+                'django.template.context_processors.request',
             ],
             # While true, show "pretty" error messages for template syntax errors.
             "debug": DEBUG,
@@ -1034,6 +1039,7 @@ MIDDLEWARE = [
     "django.contrib.flatpages.middleware.FlatpageFallbackMiddleware",
     "evennia.web.utils.middleware.OriginIpMiddleware",
     "evennia.web.utils.middleware.SharedLoginMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 # A list of Django apps (see INSTALLED_APPS) that will be listed first (if present)
@@ -1082,6 +1088,9 @@ INSTALLED_APPS = [
     "evennia.help",
     "evennia.scripts",
     "evennia.web",
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
 ]
 # The user profile extends the User object with more functionality;
 # This should usually not be changed.

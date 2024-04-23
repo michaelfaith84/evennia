@@ -32,6 +32,7 @@ urlpatterns = [
     # path("admin/", include("evennia.web.admin.urls")),
     # favicon
     path("favicon.ico", RedirectView.as_view(url="/media/images/favicon.ico", permanent=False)),
+    path('accounts/', include('allauth.urls')),
 ]
 
 if settings.REST_API_ENABLED:
