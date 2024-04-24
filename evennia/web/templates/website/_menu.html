@@ -67,7 +67,8 @@ folder and edit it to add/remove links to the menu.
                   <a class="dropdown-item" href="#">No characters found!</a>
                 {% endfor %}
                 <div class="dropdown-divider"></div>
-                <a class="dropdown-item" href="{% url 'password_change' %}">Change Password</a>
+                <a class="dropdown-item" href="{% url 'account_change_password' %}">Change Password</a>
+                <a class="dropdown-item" href="{% url 'socialaccount_connections' %}">Social Accounts</a>
                 <a class="dropdown-item" href="{% url 'logout' %}">Log Out</a>
               </div>
             </li>

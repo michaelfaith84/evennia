@@ -3,8 +3,11 @@
 {% block titleblock %}Login{% endblock %}
 
 {% block body %}
+    
+{% load addclass allauth socialaccount %}
 
-{% load addclass %}
+{% get_providers as socialaccount_providers %}
+
 <div class="container main-content mt-4" id="main-copy">
   <div class="row">
     <div class="col-lg-5 offset-lg-3 col-sm-12">
@@ -47,7 +50,25 @@
               <input type="hidden" name="next" value="{{ next }}" />
             </div>
           </form>
-
+              {% if socialaccount_providers|length > 0 %}
+                  <div class="text-center mb-3">Or Login With:</div>
+                  <div>
+                    {% element provider_list %}
+                        {% for provider in socialaccount_providers %}
+                            {% if provider.id == "openid" %}
+                                {% for brand in provider.get_brands %}
+                                    {% provider_login_url provider openid=brand.openid_url process=process as href %}
+                                    {% element provider name=brand.name provider_id=provider.id href=href %}
+                                    {% endelement %}
+                                {% endfor %}
+                            {% endif %}
+                            {% provider_login_url provider process=process scope=scope auth_params=auth_params as href %}
+                            {% element provider name=provider.name provider_id=provider.id href=href %}
+                            {% endelement %}
+                        {% endfor %}
+                    {% endelement %}
+                  </div>
+              {% endif %}
           {% endif %}
         </div>
       </div>

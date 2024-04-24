@@ -1007,7 +1007,6 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "sekizai.context_processors.sekizai",
                 "evennia.web.utils.general_context.general_context",
-                'django.template.context_processors.request',
             ],
             # While true, show "pretty" error messages for template syntax errors.
             "debug": DEBUG,
