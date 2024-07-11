@@ -1,6 +1,27 @@
 # Changelog
 
-## Main branch
+## Main
+
+- [Feat][pull3586]: Add ANSI color support `|U`, `|I`, `|i`, `|s`, `|S` for
+underline reset, italic/reset and strikethrough/reset (0xDEADFED5)
+- [Fix][pull3550]: Issue where rpsystem contrib search would do a global instead
+    of local search on multimatch (InspectorCaracal)
+- [Fix][pull3585]: `TagCmd.switch_options` was misnamed (erratic-pattern)
+- [Fix][pull3580]: Fix typo that made `find/loc` show the wrong dbref in result (erratic-pattern)
+- [Fix][pull3571]: Issue disambiguating between certain partial multimatches
+  (InspectorCaracal)
+- [Docs]: Add True-color description for Colors documentation (0xDEADFED5)
+- [Docs]: Doc fixes (Griatch, InspectorCaracal, 0xDEADFED5)
+
+[pull3585]: https://github.com/evennia/evennia/pull/3585
+[pull3580]: https://github.com/evennia/evennia/pull/3580
+[pull3571]: https://github.com/evennia/evennia/pull/3571
+[pull3586]: https://github.com/evennia/evennia/pull/3586
+[pull3550]: https://github.com/evennia/evennia/pull/3550
+
+## Evennia 4.2.0
+
+June 27, 2024
 
 - [Feature][pull3470]: New `exit_order` kwarg to
   `DefaultObject.get_display_exits` to easier customize the order in which
@@ -48,6 +69,10 @@
   template properly (InspectorCaracal)
 - [Fix][pull3545]: Fix fallback issue in cmdhandler for local-object cmdsets (InspectorCaracal)
 - [Fix][pull3554]: Fix/readd custom `ic` command to the `character_creator` contrib (InspectorCaracal)
+- [Fix][pull3566]: Make sure the `website/base.html` website base is targeted
+  explicitly so it doesn't get overridden by same file name elsewhere in app (InspectorCaracal)
+- [fix][issue3387]: Update all game template doc strings to be more up-to-date
+  (Griatch)
 - [Docs]: Doc fixes (Griatch, chiizujin, InspectorCaracal, iLPDev)
 
 [pull3470]: https://github.com/evennia/evennia/pull/3470
@@ -79,7 +104,9 @@
 [pull3549]: https://github.com/evennia/evennia/pull/3549
 [pull3554]: https://github.com/evennia/evennia/pull/3554
 [pull3523]: https://github.com/evennia/evennia/pull/3523
+[pull3566]: https://github.com/evennia/evennia/pull/3566
 [issue3522]: https://github.com/evennia/evennia/issue/3522
+[issue3387]: https://github.com/evennia/evennia/issue/3387
 
 
 ## Evennia 4.1.1
