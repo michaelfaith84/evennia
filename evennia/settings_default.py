@@ -1031,6 +1031,14 @@ MFA_SUPPORTED_TYPES = ["totp", "recovery_codes", "webauthn"]
 MFA_TOTP_ISSUER = SERVERNAME
 # Allow WebAuthn on non-HTTPS origins (localhost dev). Set False in production.
 MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
+# Passkey login (using a registered security key as the sole credential) is
+# safe to enable for existing accounts. Passkey SIGNUP is intentionally left
+# disabled: allauth's passkey signup path bypasses EvenniaAccountAdapter.save_user(),
+# meaning the account would be created without typeclass assignment, channel
+# membership, or character creation. Enable only if you override new_user() and
+# complete_signup() in a custom adapter.
+MFA_PASSKEY_LOGIN_ENABLED = True
+MFA_PASSKEY_SIGNUP_ENABLED = False
 # URL that handles the media served from MEDIA_ROOT.
 # Example: "http://media.lawrence.com"
 MEDIA_URL = "/media/"
