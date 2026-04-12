@@ -1,0 +1,42 @@
+{% extends "website/base.html" %}
+{% load addclass %}
+
+{% block titleblock %}Verify Security Key{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-5 offset-lg-3 col-sm-12">
+    <div class="card mt-3">
+      <div class="card-body">
+        <h1 class="card-title">Verify Security Key</h1>
+        <hr />
+        <p>Touch or activate your security key to continue.</p>
+
+        <form method="post" action="{% url 'mfa_reauthenticate_webauthn' %}">
+          {% csrf_token %}
+          {% for field in form %}
+            {{ field|addclass:"form-control" }}
+          {% endfor %}
+          {{ redirect_field }}
+          <hr />
+          <button type="button" id="mfa_webauthn_reauthenticate" class="form-control btn btn-outline-secondary">
+            Use Security Key
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_body %}
+{{ js_data|json_script:"js_data" }}
+{% include "mfa/webauthn/snippets/scripts.html" %}
+<script data-allauth-onload="allauth.webauthn.forms.authenticateForm" type="application/json">{
+  "ids": {
+    "authenticate": "mfa_webauthn_reauthenticate",
+    "credential": "{{ form.credential.auto_id }}",
+    "data": "js_data"
+  }
+}</script>
+{% endblock %}

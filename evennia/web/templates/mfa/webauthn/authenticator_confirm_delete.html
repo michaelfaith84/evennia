@@ -1,0 +1,27 @@
+{% extends "website/base.html" %}
+
+{% block titleblock %}Remove Security Key{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-5 offset-lg-3 col-sm-12">
+    <div class="card mt-3">
+      <div class="card-body">
+        <h1 class="card-title">Remove Security Key</h1>
+        <hr />
+        <div class="alert alert-warning" role="alert">
+          Are you sure you want to remove <strong>{{ authenticator }}</strong>?
+        </div>
+
+        <form method="post" action="{% url 'mfa_remove_webauthn' pk=authenticator.pk %}">
+          {% csrf_token %}
+          <input class="form-control btn btn-outline-danger" type="submit" value="Remove Key" />
+          <div class="text-center mt-2">
+            <a href="{% url 'mfa_list_webauthn' %}">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

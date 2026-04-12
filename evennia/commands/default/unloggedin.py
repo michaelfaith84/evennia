@@ -19,6 +19,7 @@ COMMAND_DEFAULT_CLASS = utils.class_from_module(settings.COMMAND_DEFAULT_CLASS)
 # limit symbol import for API
 __all__ = (
     "CmdUnconnectedConnect",
+    "CmdUnconnectedTOTP",
     "CmdUnconnectedCreate",
     "CmdUnconnectedQuit",
     "CmdUnconnectedLook",
@@ -150,9 +151,66 @@ class CmdUnconnectedConnect(COMMAND_DEFAULT_CLASS):
             username=name, password=password, ip=address, session=session
         )
         if account:
-            session.sessionhandler.login(session, account)
+            from evennia.server.mfa_utils import is_mfa_enabled
+
+            if is_mfa_enabled(account):
+                # Store authenticated account and prompt for MFA code
+                session.ndb._mfa_pending_account = account
+                session.msg(
+                    "\n|wThis account is protected by two-factor authentication.|n\n"
+                    "Enter your code with: |wtotp <code>|n\n"
+                    "(Use a 6-digit authenticator code or a recovery code.)"
+                )
+            else:
+                session.sessionhandler.login(session, account)
         else:
             session.msg("|R%s|n" % "\n".join(errors))
+
+
+class CmdUnconnectedTOTP(COMMAND_DEFAULT_CLASS):
+    """
+    Complete login with a two-factor authentication code.
+
+    Usage (at login screen, after entering account/password):
+      totp <code>
+
+    Enter the 6-digit code from your authenticator app, or one of your
+    recovery codes. This command is only available after successfully
+    entering your username and password for an MFA-protected account.
+    """
+
+    key = "totp"
+    aliases = ["2fa", "mfa"]
+    locks = "cmd:all()"
+    arg_regex = r"\s.*?|$"
+
+    def func(self):
+        """Validate the MFA code and complete login."""
+        session = self.caller
+        account = session.ndb._mfa_pending_account
+
+        if not account:
+            session.msg("You must first enter your |wconnect <username> <password>|n.")
+            return
+
+        code = self.args.strip()
+        if not code:
+            session.msg("Usage: |wtotp <code>|n")
+            return
+
+        from evennia.server.mfa_utils import validate_mfa_code
+
+        if validate_mfa_code(account, code):
+            # Clear pending state and complete login
+            del session.ndb._mfa_pending_account
+            session.sessionhandler.login(session, account)
+        else:
+            # Clear pending state on failure — prevents brute-force
+            del session.ndb._mfa_pending_account
+            session.msg(
+                "|RInvalid code.|n\n"
+                "Please reconnect and try again: |wconnect <username> <password>|n"
+            )
 
 
 class CmdUnconnectedCreate(COMMAND_DEFAULT_CLASS):

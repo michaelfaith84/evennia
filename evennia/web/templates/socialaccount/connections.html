@@ -1,0 +1,58 @@
+{% extends "website/base.html" %}
+{% load socialaccount %}
+
+{% block titleblock %}Connected Accounts{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-6 offset-lg-3 col-sm-12">
+    <div class="card mt-3">
+      <div class="card-body">
+        <h1 class="card-title">Connected Accounts</h1>
+        <hr />
+
+        {% if form.accounts %}
+          <p>You can sign in using any of the following connected accounts:</p>
+          <form method="post" action="{% url 'socialaccount_connections' %}">
+            {% csrf_token %}
+            <ul class="list-group mb-3">
+              {% for acc in form.fields.account.choices %}
+                {% with account=acc.0.instance.get_provider_account %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <div>
+                    <input type="radio" name="account" value="{{ account.account.pk }}"
+                           id="id_account_{{ account.account.pk }}" />
+                    <label for="id_account_{{ account.account.pk }}" class="mb-0 ml-1">
+                      {{ account }} <span class="badge badge-secondary">{{ account.get_brand.name }}</span>
+                    </label>
+                  </div>
+                </li>
+                {% endwith %}
+              {% endfor %}
+            </ul>
+            <button type="submit" class="btn btn-outline-danger btn-sm">Remove Selected</button>
+          </form>
+        {% else %}
+          <p class="text-muted">No third-party accounts connected.</p>
+        {% endif %}
+
+        <hr />
+        <h5>Add a Third-Party Account</h5>
+        {% get_providers as socialaccount_providers %}
+        {% if socialaccount_providers %}
+          <div class="d-flex flex-wrap mt-2">
+            {% for provider in socialaccount_providers %}
+              {% provider_login_url provider process="connect" as provider_url %}
+              <a href="{{ provider_url }}" class="btn btn-outline-secondary btn-sm m-1">
+                {{ provider.name }}
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted small">No social providers configured.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

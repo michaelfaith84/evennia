@@ -1,12 +1,9 @@
 {% extends "website/base.html" %}
 {% load socialaccount %}
 
-{% block titleblock %}
-Register
-{% endblock %}
+{% block titleblock %}Register{% endblock %}
 
 {% block body %}
-
 {% load addclass %}
 <div class="container main-content mt-4" id="main-copy">
   <div class="row">
@@ -15,8 +12,9 @@ Register
         <div class="card-body">
           <h1 class="card-title">Register</h1>
           <hr />
+
           {% if user.is_authenticated %}
-          <div class="alert alert-info" role="alert">You are already registered!</div>
+            <div class="alert alert-info" role="alert">You are already registered!</div>
           {% else %}
             {% if form.errors %}
               {% for field in form %}
@@ -24,30 +22,33 @@ Register
                   <div class="alert alert-danger" role="alert">{{ error }}</div>
                 {% endfor %}
               {% endfor %}
+              {% for error in form.non_field_errors %}
+                <div class="alert alert-danger" role="alert">{{ error }}</div>
+              {% endfor %}
             {% endif %}
-          {% endif %}
-  
-          {% if not user.is_authenticated %}
-            {% if register_enabled %}
-              <form method="post" action="?">
+
+            {% if not SOCIALACCOUNT_ONLY %}
+              <form method="post" action="{% url 'account_signup' %}">
                 {% csrf_token %}
-      
+                {{ redirect_field }}
+
                 {% for field in form %}
                 <div class="form-field my-3">
-                    {{ field.label_tag }}
-                    {{ field | addclass:"form-control" }}
-                    {% if field.help_text %}
+                  {{ field.label_tag }}
+                  {{ field|addclass:"form-control" }}
+                  {% if field.help_text %}
                     <small class="form-text text-muted">{{ field.help_text|safe }}</small>
-                    {% endif %}
+                  {% endif %}
                 </div>
                 {% endfor %}
-                
+
                 <hr />
                 <div class="form-group">
                   <input class="form-control btn btn-outline-secondary" type="submit" value="Register" />
-                  <input type="hidden" name="next" value="{{ next }}" />
                 </div>
               </form>
+            {% endif %}
+
             {% get_providers as socialaccount_providers %}
             {% if socialaccount_providers %}
               <hr />
@@ -60,9 +61,6 @@ Register
                   </a>
                 {% endfor %}
               </div>
-            {% endif %}
-            {% else %}
-              <p>Registration is currently disabled.</p>
             {% endif %}
           {% endif %}
         </div>

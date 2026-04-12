@@ -1,0 +1,28 @@
+{% extends "website/base.html" %}
+
+{% block titleblock %}Recovery Codes{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-5 offset-lg-3 col-sm-12">
+    <div class="card mt-3">
+      <div class="card-body">
+        <h1 class="card-title">Recovery Codes</h1>
+        <hr />
+        <p>{{ unused_codes|length }} of {{ total_count }} codes remaining. Keep these somewhere safe — each can only be used once.</p>
+
+        <textarea class="form-control font-monospace mb-3" rows="{{ unused_codes|length }}" readonly>{% for code in unused_codes %}{{ code }}{% if not forloop.last %}
+{% endif %}{% endfor %}</textarea>
+
+        <div class="d-flex">
+          {% if unused_codes %}
+            <a href="{% url 'mfa_download_recovery_codes' %}" class="btn btn-outline-secondary btn-sm mr-2">Download</a>
+          {% endif %}
+          <a href="{% url 'mfa_generate_recovery_codes' %}" class="btn btn-outline-secondary btn-sm mr-2">Regenerate</a>
+          <a href="{% url 'mfa_index' %}" class="btn btn-link btn-sm">Back</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

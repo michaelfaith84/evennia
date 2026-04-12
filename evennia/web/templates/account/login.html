@@ -1,0 +1,75 @@
+{% extends "website/base.html" %}
+{% load socialaccount %}
+
+{% block titleblock %}Login{% endblock %}
+
+{% block body %}
+{% load addclass %}
+<div class="container main-content mt-4" id="main-copy">
+  <div class="row">
+    <div class="col-lg-5 offset-lg-3 col-sm-12">
+      <div class="card mt-3">
+        <div class="card-body">
+          <h1 class="card-title">Login</h1>
+          <hr />
+          {% include 'website/messages.html' %}
+
+          {% if user.is_authenticated %}
+            <div class="alert alert-info" role="alert">You are already logged in!</div>
+          {% else %}
+            {% if form.errors %}
+              <div class="alert alert-danger" role="alert">Your username and password are incorrect. Please try again.</div>
+            {% endif %}
+
+            <form method="post" action="{% url 'account_login' %}">
+              {% csrf_token %}
+              {{ redirect_field }}
+
+              {% for field in form %}
+              <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+                {{ field|addclass:"form-control" }}
+                {% if field.errors %}
+                  {% for error in field.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                  {% endfor %}
+                {% endif %}
+              </div>
+              {% endfor %}
+
+              <hr />
+              <div class="row">
+                <div class="col-lg-6 col-sm-12 text-center small">
+                  <a href="{% url 'account_reset_password' %}">Forgot Password?</a>
+                </div>
+                <div class="col-lg-6 col-sm-12 text-center small">
+                  <a href="{% url 'account_signup' %}">Create Account</a>
+                </div>
+              </div>
+              <hr />
+
+              <div class="form-group">
+                <input class="form-control btn btn-outline-secondary" type="submit" value="Login" />
+              </div>
+            </form>
+
+            {% get_providers as socialaccount_providers %}
+            {% if socialaccount_providers %}
+              <hr />
+              <p class="text-center text-muted small mb-2">Or sign in with</p>
+              <div class="d-flex flex-wrap justify-content-center">
+                {% for provider in socialaccount_providers %}
+                  {% provider_login_url provider process="login" as provider_url %}
+                  <a href="{{ provider_url }}" class="btn btn-outline-secondary btn-sm m-1">
+                    {{ provider.name }}
+                  </a>
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

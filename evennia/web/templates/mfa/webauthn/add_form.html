@@ -1,0 +1,51 @@
+{% extends "website/base.html" %}
+{% load addclass static %}
+
+{% block titleblock %}Add Security Key{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-5 offset-lg-3 col-sm-12">
+    <div class="card mt-3">
+      <div class="card-body">
+        <h1 class="card-title">Add Security Key</h1>
+        <hr />
+        <p>Give your key a name, then click <strong>Register Key</strong> and follow your browser's prompt to touch or activate your security key.</p>
+
+        <form method="post" action="{% url 'mfa_add_webauthn' %}" id="webauthn-add-form">
+          {% csrf_token %}
+          {% for field in form %}
+          <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+            {{ field|addclass:"form-control" }}
+            {% for error in field.errors %}
+              <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+          </div>
+          {% endfor %}
+          <hr />
+          <button type="button" id="mfa_webauthn_add" class="btn btn-outline-secondary btn-block">
+            Register Key
+          </button>
+          <div class="text-center mt-2">
+            <a href="{% url 'mfa_list_webauthn' %}">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_body %}
+{% include "mfa/webauthn/snippets/scripts.html" %}
+{{ js_data|json_script:"js_data" }}
+<script data-allauth-onload="allauth.webauthn.forms.addForm" type="application/json">{
+  "ids": {
+    "add": "mfa_webauthn_add",
+    "passwordless": "{{ form.passwordless.auto_id }}",
+    "credential": "{{ form.credential.auto_id }}",
+    "data": "js_data"
+  }
+}</script>
+{% endblock %}

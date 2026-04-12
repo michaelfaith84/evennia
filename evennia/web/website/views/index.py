@@ -25,7 +25,7 @@ def _gamestats():
     nplyrs_conn_recent = len(recent_users) or "none"
     nplyrs = AccountDB.objects.num_total_accounts() or "none"
     nplyrs_reg_recent = len(AccountDB.objects.get_recently_created_accounts()) or "none"
-    nsess = evennia.SESSION_HANDLER.account_count()
+    nsess = evennia.SESSION_HANDLER.account_count() if evennia.SESSION_HANDLER else 0
     # nsess = len(AccountDB.objects.get_connected_accounts()) or "no one"
 
     nobjs = ObjectDB.objects.count()

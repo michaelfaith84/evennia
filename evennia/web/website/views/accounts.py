@@ -38,7 +38,7 @@ class AccountCreateView(AccountMixin, EvenniaCreateView):
 
     # -- Django constructs --
     template_name = "website/registration/register.html"
-    success_url = reverse_lazy("login")
+    success_url = reverse_lazy("account_login")
 
     def form_valid(self, form):
         """

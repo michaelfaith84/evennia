@@ -1,0 +1,37 @@
+{% extends "website/base.html" %}
+
+{% block titleblock %}Generate Recovery Codes{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-5 offset-lg-3 col-sm-12">
+    <div class="card mt-3">
+      <div class="card-body">
+        <h1 class="card-title">Generate Recovery Codes</h1>
+        <hr />
+
+        {% if unused_code_count %}
+          <div class="alert alert-warning" role="alert">
+            You have {{ unused_code_count }} existing codes. Generating new ones will invalidate them. Are you sure?
+          </div>
+        {% else %}
+          <p>Generate a set of one-time recovery codes for your account.</p>
+        {% endif %}
+
+        <form method="post" action="{% url 'mfa_generate_recovery_codes' %}">
+          {% csrf_token %}
+          {{ form.as_p }}
+          <div class="form-group">
+            <input class="form-control btn {% if unused_code_count %}btn-outline-danger{% else %}btn-outline-secondary{% endif %}"
+                   type="submit" value="Generate" />
+          </div>
+        </form>
+
+        <div class="text-center mt-2">
+          <a href="{% url 'mfa_index' %}">Cancel</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

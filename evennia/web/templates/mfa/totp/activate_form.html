@@ -1,0 +1,55 @@
+{% extends "website/base.html" %}
+{% load addclass %}
+
+{% block titleblock %}Activate Authenticator App{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-6 offset-lg-3 col-sm-12">
+    <div class="card mt-3">
+      <div class="card-body">
+        <h1 class="card-title">Activate Authenticator App</h1>
+        <hr />
+        <p>Scan the QR code below with your authenticator app, then enter the verification code it generates.</p>
+
+        <div class="text-center my-3">
+          <img src="{{ totp_svg_data_uri }}" alt="TOTP QR Code" style="max-width: 200px;" />
+        </div>
+
+        <div class="form-group">
+          <label>Manual key:</label>
+          <input type="text" class="form-control" value="{{ form.secret.value }}" readonly />
+          <small class="form-text text-muted">Store this key to reinstall your authenticator app later.</small>
+        </div>
+
+        <form method="post" action="{% url 'mfa_activate_totp' %}">
+          {% csrf_token %}
+          {% for field in form %}
+            {% if field.name != "secret" %}
+            <div class="form-group">
+              <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+              {{ field|addclass:"form-control" }}
+              {% if field.help_text %}
+                <small class="form-text text-muted">{{ field.help_text }}</small>
+              {% endif %}
+              {% for error in field.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
+          {% endfor %}
+
+          <hr />
+          <div class="form-group">
+            <input class="form-control btn btn-outline-secondary" type="submit" value="Activate" />
+          </div>
+        </form>
+
+        <div class="text-center mt-2">
+          <a href="{% url 'mfa_index' %}">Cancel</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

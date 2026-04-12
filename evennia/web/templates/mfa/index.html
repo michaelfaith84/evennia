@@ -1,0 +1,72 @@
+{% extends "website/base.html" %}
+
+{% block titleblock %}Two-Factor Authentication{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-6 offset-lg-3 col-sm-12">
+    <h1 class="mt-3">Two-Factor Authentication</h1>
+    <hr />
+
+    {% if "totp" in MFA_SUPPORTED_TYPES %}
+    <div class="card mt-3">
+      <div class="card-header"><strong>Authenticator App (TOTP)</strong></div>
+      <div class="card-body">
+        {% if authenticators.totp %}
+          <p class="mb-2">Authentication via authenticator app is <span class="text-success">active</span>.</p>
+          <a href="{% url 'mfa_deactivate_totp' %}" class="btn btn-sm btn-outline-danger">Deactivate</a>
+        {% else %}
+          <p class="mb-2">No authenticator app configured.</p>
+          <a href="{% url 'mfa_activate_totp' %}" class="btn btn-sm btn-outline-secondary">Activate</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if "webauthn" in MFA_SUPPORTED_TYPES %}
+    <div class="card mt-3">
+      <div class="card-header"><strong>Security Keys (WebAuthn / FIDO2)</strong></div>
+      <div class="card-body">
+        {% with key_count=authenticators.webauthn|length %}
+        {% if key_count %}
+          <p class="mb-2">
+            <span class="text-success">{{ key_count }} security key{{ key_count|pluralize }}</span> registered.
+          </p>
+          <a href="{% url 'mfa_list_webauthn' %}" class="btn btn-sm btn-outline-secondary">Manage Keys</a>
+        {% else %}
+          <p class="mb-2">No security keys registered. Use a YubiKey, Touch ID, or similar FIDO2 device.</p>
+          <a href="{% url 'mfa_add_webauthn' %}" class="btn btn-sm btn-outline-secondary">Add Security Key</a>
+        {% endif %}
+        {% endwith %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if "recovery_codes" in MFA_SUPPORTED_TYPES %}
+    {% with total_count=authenticators.recovery_codes.generate_codes|length unused_count=authenticators.recovery_codes.get_unused_codes|length %}
+    <div class="card mt-3">
+      <div class="card-header"><strong>Recovery Codes</strong></div>
+      <div class="card-body">
+        {% if authenticators.recovery_codes %}
+          <p class="mb-2">{{ unused_count }} of {{ total_count }} recovery codes remaining.</p>
+          {% if is_mfa_enabled and unused_count > 0 %}
+            <a href="{% url 'mfa_view_recovery_codes' %}" class="btn btn-sm btn-outline-secondary mr-1">View</a>
+            <a href="{% url 'mfa_download_recovery_codes' %}" class="btn btn-sm btn-outline-secondary mr-1">Download</a>
+          {% endif %}
+          {% if is_mfa_enabled %}
+            <a href="{% url 'mfa_generate_recovery_codes' %}" class="btn btn-sm btn-outline-secondary">Regenerate</a>
+          {% endif %}
+        {% else %}
+          <p class="mb-2">No recovery codes set up.</p>
+          {% if is_mfa_enabled %}
+            <a href="{% url 'mfa_generate_recovery_codes' %}" class="btn btn-sm btn-outline-secondary">Generate</a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+    {% endwith %}
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

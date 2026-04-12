@@ -69,30 +69,32 @@ folder and edit it to add/remove links to the menu.
           <a class="dropdown-item" href="#">No characters found!</a>
           {% endfor %}
           <div class="dropdown-divider"></div>
-          <a class="dropdown-item" href="{% url 'password_change' %}">Change Password</a>
-          <form method="post" action="{% url 'logout' %}" style="display:inline;">
+          <a class="dropdown-item" href="{% url 'account_change_password' %}" target="_top">Change Password</a>
+          <a class="dropdown-item" href="{% url 'mfa_index' %}" target="_top">Two-Factor Authentication</a>
+          {% url 'socialaccount_connections' as connections_url %}
+          {% if connections_url %}
+          <a class="dropdown-item" href="{{ connections_url }}" target="_top">Account Connections</a>
+          {% endif %}
+          <div class="dropdown-divider"></div>
+          <form method="post" action="{% url 'account_logout' %}" style="display:inline;">
             {% csrf_token %}
             <button type="submit" class="dropdown-item">Log Out</button>
           </form>
         </div>
       </li>
       <li>
-        <form method="post" action="{% url 'logout' %}" style="display:inline;">
+        <form method="post" action="{% url 'account_logout' %}" style="display:inline;">
           {% csrf_token %}
           <button type="submit" class="nav-link btn btn-link">Log Out</button>
         </form>
       </li>
       {% else %}
       <li>
-        <form method="post" action="{% url 'login' %}" style="display:inline;">
-          {% csrf_token %}
-          <input type="hidden" name="next" value="{{ request.path }}">
-          <button type="submit" class="nav-link btn btn-link">Log In</button>
-        </form>
+        <a class="nav-link" href="{% url 'account_login' %}?next={{ request.path|urlencode }}">Log In</a>
       </li>
       {% if register_enabled %}
       <li>
-        <a class="nav-link" href="{% url 'register' %}">Register</a>
+        <a class="nav-link" href="{% url 'account_signup' %}">Register</a>
       </li>
       {% endif %}
       {% endif %}

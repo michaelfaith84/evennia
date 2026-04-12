@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
-from .views import accounts, channels, characters, errors
+from .views import channels, characters, errors
 from .views import help as helpviews
 from .views import index
 
@@ -16,9 +16,8 @@ urlpatterns = [
     path("", index.EvenniaIndexView.as_view(), name="index"),
     # errors
     path(r"tbi/", errors.to_be_implemented, name="to_be_implemented"),
-    # User Authentication (makes login/logout url names available)
-    path("auth/register", accounts.AccountCreateView.as_view(), name="register"),
-    path("auth/", include("django.contrib.auth.urls")),
+    # User Authentication — allauth provides login, logout, signup, MFA, social
+    path("auth/", include("allauth.urls")),
     # Help Topics
     path("help/", helpviews.HelpListView.as_view(), name="help"),
     path(

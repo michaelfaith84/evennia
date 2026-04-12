@@ -1,0 +1,53 @@
+{% extends "website/base.html" %}
+
+{% block titleblock %}Two-Factor Authentication{% endblock %}
+
+{% block body %}
+{% load addclass %}
+<div class="container main-content mt-4" id="main-copy">
+  <div class="row">
+    <div class="col-lg-5 offset-lg-3 col-sm-12">
+      <div class="card mt-3">
+        <div class="card-body">
+          <h1 class="card-title">Two-Factor Authentication</h1>
+          <hr />
+          <p>Your account is protected by two-factor authentication. Please enter an authenticator code:</p>
+
+          <form method="post" action="{% url 'mfa_authenticate' %}">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="form-group">
+              <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+              {{ field|addclass:"form-control" }}
+              {% if field.errors %}
+                {% for error in field.errors %}
+                  <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+              {% endif %}
+            </div>
+            {% endfor %}
+
+            <hr />
+            <div class="form-group">
+              <input class="form-control btn btn-outline-secondary" type="submit" value="Sign In" />
+            </div>
+          </form>
+
+          <div class="text-center small mt-2">
+            <a href="{% url 'mfa_view_recovery_codes' %}">Use a recovery code</a>
+          </div>
+
+          <hr />
+          <form method="post" action="{% url 'account_logout' %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'account_login' %}">
+            <div class="text-center">
+              <button type="submit" class="btn btn-link btn-sm text-muted">Cancel and return to login</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

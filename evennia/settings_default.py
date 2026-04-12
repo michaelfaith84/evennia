@@ -202,7 +202,10 @@ TIME_ZONE = "UTC"
 # Activate time zone in datetimes
 USE_TZ = True
 # Authentication backends. This is the code used to authenticate a user.
-AUTHENTICATION_BACKENDS = ["evennia.web.utils.backends.CaseInsensitiveModelBackend"]
+AUTHENTICATION_BACKENDS = [
+    "allauth.account.auth_backends.AuthenticationBackend",
+    "evennia.web.utils.backends.CaseInsensitiveModelBackend",
+]
 # Language code for this installation. All choices can be found here:
 # http://www.w3.org/TR/REC-html40/struct/dirlang.html#langcodes
 LANGUAGE_CODE = "en-us"
@@ -1006,9 +1009,28 @@ ROOT_URLCONF = "web.urls"
 # Where users are redirected after logging in via contrib.auth.login.
 LOGIN_REDIRECT_URL = "/"
 # Where to redirect users when using the @login_required decorator.
-LOGIN_URL = reverse_lazy("login")
+LOGIN_URL = reverse_lazy("account_login")
 # Where to redirect users who wish to logout.
-LOGOUT_URL = reverse_lazy("logout")
+LOGOUT_URL = reverse_lazy("account_logout")
+
+######################################################################
+# django-allauth configuration
+######################################################################
+
+# Custom adapter routes account creation through Evennia's DefaultAccount.create()
+ACCOUNT_ADAPTER = "evennia.web.utils.allauth_adapter.EvenniaAccountAdapter"
+# Username is required; email is optional (players may add it for password reset)
+ACCOUNT_EMAIL_VERIFICATION = "none"
+# Allow login by username only
+ACCOUNT_LOGIN_METHODS = {"username": True}
+# username required, email optional — expressed via ACCOUNT_SIGNUP_FIELDS
+ACCOUNT_SIGNUP_FIELDS = ["username*", "password1*", "password2*"]
+# MFA: TOTP, recovery codes, and WebAuthn/FIDO2 security keys
+MFA_SUPPORTED_TYPES = ["totp", "recovery_codes", "webauthn"]
+# Show the game name in authenticator apps (e.g. Google Authenticator)
+MFA_TOTP_ISSUER = SERVERNAME
+# Allow WebAuthn on non-HTTPS origins (localhost dev). Set False in production.
+MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
 # URL that handles the media served from MEDIA_ROOT.
 # Example: "http://media.lawrence.com"
 MEDIA_URL = "/media/"
@@ -1084,6 +1106,7 @@ MIDDLEWARE = [
     "django.contrib.flatpages.middleware.FlatpageFallbackMiddleware",
     "evennia.web.utils.middleware.OriginIpMiddleware",
     "evennia.web.utils.middleware.SharedLoginMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 # A list of Django apps (see INSTALLED_APPS) that will be listed first (if present)
@@ -1123,6 +1146,10 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "sekizai",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.mfa",
     "evennia.utils.idmapper",
     "evennia.server",
     "evennia.typeclasses",

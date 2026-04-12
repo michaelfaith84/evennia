@@ -79,6 +79,7 @@ dependencies = [
   "uritemplate == 4.1.1",
   "tzdata >= 2022.6",
   "inflection == 0.5.1",
+  "django-allauth[socialaccount,mfa] >= 65.0",
   # for unit tests and code formatting
   "mock >= 4.0.3",
   "model_mommy >= 2.0",

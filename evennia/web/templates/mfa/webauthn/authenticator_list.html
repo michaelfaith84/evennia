@@ -1,0 +1,57 @@
+{% extends "website/base.html" %}
+{% load humanize %}
+
+{% block titleblock %}Security Keys{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-7 offset-lg-2 col-sm-12">
+    <div class="card mt-3">
+      <div class="card-body">
+        <h1 class="card-title">Security Keys</h1>
+        <hr />
+
+        {% if authenticators %}
+        <table class="table table-sm mb-3">
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Added</th>
+              <th>Last Used</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for auth in authenticators %}
+            <tr>
+              <td>
+                {{ auth }}
+                {% if auth.wrap.is_passwordless is True %}
+                  <span class="badge badge-primary ml-1">Passkey</span>
+                {% elif auth.wrap.is_passwordless is False %}
+                  <span class="badge badge-secondary ml-1">Security Key</span>
+                {% endif %}
+              </td>
+              <td class="text-muted small">{{ auth.created_at|date:"Y-m-d" }}</td>
+              <td class="text-muted small">
+                {% if auth.last_used_at %}{{ auth.last_used_at|naturaltime }}{% else %}Never{% endif %}
+              </td>
+              <td class="text-right">
+                <a href="{% url 'mfa_edit_webauthn' pk=auth.pk %}" class="btn btn-outline-secondary btn-sm mr-1">Rename</a>
+                <a href="{% url 'mfa_remove_webauthn' pk=auth.pk %}" class="btn btn-outline-danger btn-sm">Remove</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No security keys registered.</p>
+        {% endif %}
+
+        <a href="{% url 'mfa_add_webauthn' %}" class="btn btn-outline-secondary">Add Security Key</a>
+        <a href="{% url 'mfa_index' %}" class="btn btn-link">Back</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
