@@ -683,3 +683,158 @@ external_discord_hello = _not_implemented
 
 # GMCP Client.Gui is sent by Mudlet for gui setup.
 client_gui = _not_implemented
+
+
+# ---------------------------------------------------------------------------
+# GMCP Char.Login  (https://wiki.mudlet.org/w/Standards:GMCP_Authentication)
+# ---------------------------------------------------------------------------
+# Routing: GMCP "Char.Login.Default"     -> char_login_default
+#          GMCP "Char.Login.Credentials" -> char_login_credentials
+#          GMCP "Char.Login.MFA"         -> char_login_mfa  (Evennia extension)
+# ---------------------------------------------------------------------------
+
+
+def char_login_default(session, *args, **kwargs):
+    """
+    Client is echoing back the server's ``Char.Login.Default`` advertisement.
+    This is informational — no action needed.
+
+    Args:
+        session (Session): the requesting session.
+
+    """
+    pass
+
+
+def char_login_credentials(session, *args, **kwargs):
+    """
+    Handle GMCP ``Char.Login.Credentials`` — a client-side login request.
+
+    The client sends::
+
+        Char.Login.Credentials {"account": "name", "password": "secret"}
+
+    or, for games with separate account and character names::
+
+        Char.Login.Credentials {"account": "name:character", "password": "secret"}
+
+    On success, sends ``Char.Login.Result {"success": true}`` and logs the
+    session in.  If the account requires MFA, sends::
+
+        Char.Login.Result {"success": false, "message": "mfa-required",
+                           "type": ["totp", "recovery_codes"]}
+
+    and waits for a ``Char.Login.MFA`` message.  On failure, sends
+    ``Char.Login.Result {"success": false, "message": "<reason>"}``.
+
+    Args:
+        session (Session): the requesting session.
+        kwargs (dict): must contain ``account`` and ``password`` keys.
+
+    """
+    import json
+
+    from django.conf import settings
+
+    from evennia.utils import class_from_module
+
+    def _send_result(success, message=None, extra=None):
+        payload = {"success": success}
+        if message:
+            payload["message"] = message
+        if extra:
+            payload.update(extra)
+        raw = f"Char.Login.Result {json.dumps(payload)}".encode("utf-8")
+        from twisted.conch.telnet import IAC, SB, SE
+        from evennia.server.portal.telnet_oob import GMCP
+
+        session._write(IAC + SB + GMCP + raw + IAC + SE)
+
+    raw_account = kwargs.get("account", "")
+    password = kwargs.get("password", "")
+
+    # Support "account:character" format — use only the account part for auth
+    name = raw_account.split(":")[0].strip() if raw_account else ""
+
+    if not name or not password:
+        _send_result(False, "Invalid credentials")
+        return
+
+    address = session.address
+    Account = class_from_module(settings.BASE_ACCOUNT_TYPECLASS)
+    account, errors = Account.authenticate(
+        username=name, password=password, ip=address, session=session
+    )
+
+    if not account:
+        _send_result(False, "Invalid credentials")
+        return
+
+    from evennia.server.mfa_utils import is_mfa_enabled
+
+    if is_mfa_enabled(account):
+        session.ndb._mfa_pending_account = account
+        _send_result(
+            False,
+            "mfa-required",
+            {"type": ["totp", "recovery_codes"]},
+        )
+    else:
+        _send_result(True)
+        session.sessionhandler.login(session, account)
+
+
+def char_login_mfa(session, *args, **kwargs):
+    """
+    Handle GMCP ``Char.Login.MFA`` — an Evennia extension for completing MFA
+    over GMCP after a ``mfa-required`` response.
+
+    The client sends::
+
+        Char.Login.MFA {"type": "totp", "code": "123456"}
+
+    or with a recovery code::
+
+        Char.Login.MFA {"type": "recovery_codes", "code": "abc123"}
+
+    On success, sends ``Char.Login.Result {"success": true}`` and completes
+    login.  On failure, clears the pending state and sends a failure result
+    so the client must restart the credentials flow.
+
+    Args:
+        session (Session): the requesting session.
+        kwargs (dict): must contain ``code`` key; ``type`` is optional hint.
+
+    """
+    import json
+
+    from twisted.conch.telnet import IAC, SB, SE
+
+    from evennia.server.portal.telnet_oob import GMCP
+
+    def _send_result(success, message=None):
+        payload = {"success": success}
+        if message:
+            payload["message"] = message
+        raw = f"Char.Login.Result {json.dumps(payload)}".encode("utf-8")
+        session._write(IAC + SB + GMCP + raw + IAC + SE)
+
+    account = session.ndb._mfa_pending_account
+    if not account:
+        _send_result(False, "No pending authentication. Send Char.Login.Credentials first.")
+        return
+
+    code = kwargs.get("code", "").strip()
+    if not code:
+        _send_result(False, "Missing code")
+        return
+
+    from evennia.server.mfa_utils import validate_mfa_code
+
+    if validate_mfa_code(account, code):
+        del session.ndb._mfa_pending_account
+        _send_result(True)
+        session.sessionhandler.login(session, account)
+    else:
+        del session.ndb._mfa_pending_account
+        _send_result(False, "Invalid code")

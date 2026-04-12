@@ -136,6 +136,53 @@ class TelnetOOB:
         self.GMCP = True
         self.protocol().protocol_flags["OOB"] = True
         self.protocol().handshake_done()
+        # Advertise GMCP Char.Login support per the MUD standards spec:
+        # https://wiki.mudlet.org/w/Standards:GMCP_Authentication
+        self._send_char_login_default()
+
+    def _send_char_login_default(self):
+        """
+        Send ``Char.Login.Default`` to inform the client of supported
+        authentication methods.  Always includes ``password-credentials``.
+        OAuth is listed when allauth socialaccount providers are configured.
+
+        Notes:
+            Per the spec the payload is::
+
+                Char.Login.Default {"type": ["password-credentials"]}
+
+            With OAuth providers active::
+
+                Char.Login.Default {
+                    "type": ["oauth", "password-credentials"],
+                    "location": "https://example.com/.well-known/openid-configuration"
+                }
+
+        """
+        import json
+
+        auth_types = ["password-credentials"]
+        payload = {"type": auth_types}
+
+        try:
+            from django.conf import settings
+            from allauth.socialaccount import providers
+
+            if providers.registry.get_list():
+                from django.contrib.sites.models import Site
+
+                site = Site.objects.get_current()
+                auth_types.insert(0, "oauth")
+                payload["location"] = (
+                    f"https://{site.domain}/.well-known/openid-configuration"
+                )
+        except Exception:
+            pass
+
+        encoded = f"Char.Login.Default {json.dumps(payload)}".encode("utf-8")
+        from twisted.conch.telnet import IAC, SB, SE
+
+        self.protocol()._write(IAC + SB + GMCP + encoded + IAC + SE)
 
     # encoders
 
