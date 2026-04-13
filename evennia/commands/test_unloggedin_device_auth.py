@@ -18,9 +18,6 @@ class TestConnectDeviceAuth(BaseEvenniaTest):
         super().setUp()
         from unittest.mock import MagicMock
 
-        # Make self.account have no usable password (passwordless account)
-        self.account.set_unusable_password()
-        self.account.save()
         # Mock session.msg so we can inspect calls
         self.session.msg = MagicMock()
 

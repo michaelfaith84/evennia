@@ -208,11 +208,7 @@ class CmdUnconnectedConnect(COMMAND_DEFAULT_CLASS):
 
                 name = parts[0]
                 account = AccountDB.objects.get_account_from_name(name)
-                if (
-                    account
-                    and not account.has_usable_password()
-                    and _has_passwordless_methods(account)
-                ):
+                if account and _has_passwordless_methods(account):
                     # Cancel any existing pending auth for this session.
                     existing_key = session.ndb._pending_auth_script_key
                     if existing_key:
