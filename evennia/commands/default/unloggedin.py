@@ -20,6 +20,7 @@ COMMAND_DEFAULT_CLASS = utils.class_from_module(settings.COMMAND_DEFAULT_CLASS)
 __all__ = (
     "CmdUnconnectedConnect",
     "CmdUnconnectedTOTP",
+    "CmdUnconnectedDeviceAuth",
     "CmdUnconnectedCreate",
     "CmdUnconnectedQuit",
     "CmdUnconnectedLook",
@@ -28,6 +29,62 @@ __all__ = (
     "CmdUnconnectedInfo",
     "CmdUnconnectedScreenreader",
 )
+
+
+def _poll_device_auth(session, script_key):
+    """
+    Poll a PendingAuthScript to check whether the player has authenticated on the web.
+
+    Called by ``reactor.callLater`` every 3 seconds during a pending device-auth
+    session. Reschedules itself until the token is completed, expired, or the
+    session has disconnected.
+
+    Args:
+        session: The Evennia ``Session`` waiting for authentication.
+        script_key (str): The ``db_key`` of the ``PendingAuthScript`` (e.g.
+            ``"pending_auth_a3f9c2b1"``).
+    """
+    from evennia.scripts.models import ScriptDB
+
+    # If the session is gone (disconnected), clean up and stop.
+    if not session or not session.sessionhandler.session_from_sessid(session.sessid):
+        script = ScriptDB.objects.filter(db_key=script_key).first()
+        if script:
+            script.delete()
+        return
+
+    script = ScriptDB.objects.filter(db_key=script_key).first()
+
+    # Script was deleted externally (e.g. auth cancel command).
+    if not script:
+        return
+
+    if script.is_expired():
+        script.delete()
+        session.ndb._pending_auth_script_key = None
+        session.msg(
+            "|RAuthentication timed out.|n\n"
+            "Use |wconnect <username>|n to try again."
+        )
+        return
+
+    if script.db.completed:
+        from evennia.accounts.models import AccountDB
+
+        account = AccountDB.objects.filter(pk=script.db.account_id).first()
+        script.delete()
+        session.ndb._pending_auth_script_key = None
+        if account:
+            session.msg("|gAuthenticated! Welcome, %s.|n" % account.name)
+            session.sessionhandler.login(session, account)
+        else:
+            session.msg("|RAuthentication failed: account not found. Please try again.|n")
+        return
+
+    # Not done yet — reschedule.
+    from twisted.internet import reactor
+
+    reactor.callLater(3, _poll_device_auth, session, script_key)
 
 CONNECTION_SCREEN_MODULE = settings.CONNECTION_SCREEN_MODULE
 
@@ -139,6 +196,104 @@ class CmdUnconnectedConnect(COMMAND_DEFAULT_CLASS):
                     session.msg("|R%s|n" % "\n".join(errors))
                     return
 
+            # Username only (no password) — check for passwordless login.
+            if len(parts) == 1:
+                import time as _time
+
+                from evennia.accounts.models import AccountDB
+                from evennia.server.pending_auth import (
+                    PendingAuthScript,
+                    _has_passwordless_methods,
+                    get_pending_script,
+                )
+                from evennia.utils.create import create_script
+
+                name = parts[0]
+                account = AccountDB.objects.get_account_from_name(name)
+                if (
+                    account
+                    and not account.has_usable_password()
+                    and _has_passwordless_methods(account)
+                ):
+                    # Cancel any existing pending auth for this session.
+                    existing_key = session.ndb._pending_auth_script_key
+                    if existing_key:
+                        old_token = existing_key.replace("pending_auth_", "")
+                        old_script = get_pending_script(old_token)
+                        if old_script:
+                            old_script.delete()
+
+                    # Create the pending auth script.
+                    token = PendingAuthScript.generate_token()
+                    script_key = f"pending_auth_{token}"
+                    script = create_script(
+                        PendingAuthScript,
+                        key=script_key,
+                        persistent=False,
+                    )
+                    script.db.token = token
+                    script.db.username = account.username
+                    script.db.expires_at = _time.time() + settings.DEVICE_AUTH_TIMEOUT
+                    script.db.completed = False
+                    script.db.account_id = None
+
+                    session.ndb._pending_auth_script_key = script_key
+
+                    # Build the QR URL.
+                    hostname = getattr(settings, "SERVER_HOSTNAME", "localhost")
+                    webserver_ports = getattr(settings, "WEBSERVER_PORTS", [(4001, 4005)])
+                    port = webserver_ports[0][0] if webserver_ports else 4001
+                    scheme = "https" if port == 443 else "http"
+                    port_suffix = "" if port in (80, 443) else f":{port}"
+                    url = f"{scheme}://{hostname}{port_suffix}/auth/device/{token}/"
+
+                    # Render QR code as ASCII art.
+                    try:
+                        import io
+
+                        import qrcode
+
+                        qr = qrcode.QRCode()
+                        qr.add_data(url)
+                        qr.make(fit=True)
+                        buf = io.StringIO()
+                        qr.print_ascii(out=buf, invert=True)
+                        qr_text = buf.getvalue()
+                    except Exception:
+                        qr_text = ""
+
+                    timeout_mins = settings.DEVICE_AUTH_TIMEOUT // 60
+                    msg = (
+                        f"\n|wThis account uses passwordless login.|n\n"
+                        f"Scan the QR code below on your phone to sign in "
+                        f"(expires in {timeout_mins} minutes):\n\n"
+                    )
+                    if qr_text:
+                        msg += qr_text + "\n"
+                    msg += (
+                        f"|wOr visit:|n {url}\n\n"
+                        "Waiting for authentication... "
+                        "(type |wauth cancel|n to abort)"
+                    )
+                    session.msg(msg)
+
+                    # Start polling.
+                    from twisted.internet import reactor
+
+                    reactor.callLater(3, _poll_device_auth, session, script_key)
+                    return
+                elif account is None:
+                    # Unknown username — generic error (no info leak).
+                    session.msg(
+                        "|RUsername and/or password is incorrect. "
+                        "Please check your credentials.|n"
+                    )
+                    return
+                else:
+                    # Account found but has a usable password — show usage.
+                    session.msg("\n\r Usage (without <>): connect <name> <password>")
+                    return
+
         if len(parts) != 2:
             session.msg("\n\r Usage (without <>): connect <name> <password>")
             return
@@ -211,6 +366,46 @@ class CmdUnconnectedTOTP(COMMAND_DEFAULT_CLASS):
                 "|RInvalid code.|n\n"
                 "Please reconnect and try again: |wconnect <username> <password>|n"
             )
+
+
+class CmdUnconnectedDeviceAuth(COMMAND_DEFAULT_CLASS):
+    """
+    Manage a pending device-auth (QR code) login.
+
+    Usage (at login screen, while waiting for QR authentication):
+      auth cancel
+
+    Cancels the current pending QR authentication and returns you to
+    the login prompt. Use 'connect <username>' to start a new attempt.
+    """
+
+    key = "auth"
+    aliases = ["device"]
+    locks = "cmd:all()"
+    arg_regex = r"\s.*?|$"
+
+    def func(self):
+        """Handle auth subcommands."""
+        session = self.caller
+        arg = self.args.strip().lower()
+
+        if arg != "cancel":
+            session.msg("Usage: |wauth cancel|n")
+            return
+
+        script_key = session.ndb._pending_auth_script_key
+        if not script_key:
+            session.msg("No pending authentication to cancel.")
+            return
+
+        from evennia.server.pending_auth import get_pending_script
+
+        token = script_key.replace("pending_auth_", "")
+        script = get_pending_script(token)
+        if script:
+            script.delete()
+        session.ndb._pending_auth_script_key = None
+        session.msg("Authentication cancelled. Use |wconnect <username>|n to try again.")
 
 
 class CmdUnconnectedCreate(COMMAND_DEFAULT_CLASS):

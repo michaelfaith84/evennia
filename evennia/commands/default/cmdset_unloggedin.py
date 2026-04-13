@@ -20,6 +20,7 @@ class UnloggedinCmdSet(CmdSet):
         "Populate the cmdset"
         self.add(unloggedin.CmdUnconnectedConnect())
         self.add(unloggedin.CmdUnconnectedTOTP())
+        self.add(unloggedin.CmdUnconnectedDeviceAuth())
         self.add(unloggedin.CmdUnconnectedCreate())
         self.add(unloggedin.CmdUnconnectedQuit())
         self.add(unloggedin.CmdUnconnectedLook())
