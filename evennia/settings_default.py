@@ -1031,14 +1031,15 @@ MFA_SUPPORTED_TYPES = ["totp", "recovery_codes", "webauthn"]
 MFA_TOTP_ISSUER = SERVERNAME
 # Allow WebAuthn on non-HTTPS origins (localhost dev). Set False in production.
 MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
-# Passkey login (using a registered security key as the sole credential) is
-# safe to enable for existing accounts. Passkey SIGNUP is intentionally left
-# disabled: allauth's passkey signup path bypasses EvenniaAccountAdapter.save_user(),
-# meaning the account would be created without typeclass assignment, channel
-# membership, or character creation. Enable only if you override new_user() and
-# complete_signup() in a custom adapter.
+# Passkey login: players with a registered security key can log in without a password.
 MFA_PASSKEY_LOGIN_ENABLED = True
-MFA_PASSKEY_SIGNUP_ENABLED = False
+# Passkey signup: players can create an account using only a username and a passkey.
+# Evennia's EvenniaWebConfig replaces allauth's system check so that mandatory
+# email verification is not required (Evennia uses ACCOUNT_EMAIL_VERIFICATION="none").
+MFA_PASSKEY_SIGNUP_ENABLED = True
+# Timeout in seconds for telnet device-auth (QR code) sessions.
+# After this time the QR code expires and the player must reconnect and try again.
+DEVICE_AUTH_TIMEOUT = 300  # 5 minutes
 # URL that handles the media served from MEDIA_ROOT.
 # Example: "http://media.lawrence.com"
 MEDIA_URL = "/media/"
