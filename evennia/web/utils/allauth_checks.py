@@ -37,13 +37,19 @@ def evennia_mfa_settings_check(app_configs, **kwargs):
         configuration is valid.
 
     """
+    from django.conf import settings as django_settings
+
     from allauth.account import app_settings as account_settings
     from allauth.mfa import app_settings
     from allauth.mfa.models import Authenticator
 
     ret = []
 
-    if not app_settings.PASSKEY_SIGNUP_ENABLED:
+    # Read MFA_PASSKEY_SIGNUP_ENABLED directly from Django settings because
+    # allauth's app_settings.PASSKEY_SIGNUP_ENABLED short-circuits to False when
+    # webauthn is missing from SUPPORTED_TYPES, hiding the misconfiguration.
+    passkey_signup_requested = getattr(django_settings, "MFA_PASSKEY_SIGNUP_ENABLED", False)
+    if not passkey_signup_requested:
         return ret
 
     # This critical always applies: passkey signup needs the webauthn authenticator.
@@ -53,6 +59,8 @@ def evennia_mfa_settings_check(app_configs, **kwargs):
                 msg="MFA_PASSKEY_SIGNUP_ENABLED requires MFA_SUPPORTED_TYPES to include 'webauthn'"
             )
         )
+        # Without webauthn, the remaining checks are irrelevant.
+        return ret
 
     # The following three criticals only apply when email verification is active.
     # With ACCOUNT_EMAIL_VERIFICATION = "none", there is no verification step,

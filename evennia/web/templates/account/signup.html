@@ -62,6 +62,15 @@
                 {% endfor %}
               </div>
             {% endif %}
+
+            {% if PASSKEY_SIGNUP_ENABLED %}
+              <hr />
+              <div class="text-center">
+                <a href="{% url 'account_signup_by_passkey' %}" class="btn btn-outline-secondary btn-sm">
+                  Sign up with a passkey instead
+                </a>
+              </div>
+            {% endif %}
           {% endif %}
         </div>
       </div>

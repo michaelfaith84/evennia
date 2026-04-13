@@ -1,0 +1,50 @@
+{% extends "website/base.html" %}
+{% load addclass static %}
+
+{% block titleblock %}Register Passkey{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-5 offset-lg-3 col-sm-12">
+    <div class="card mt-3">
+      <div class="card-body">
+        <h1 class="card-title">Register Passkey</h1>
+        <hr />
+        <p>Give your passkey a name, then click <strong>Create Passkey</strong> and follow your browser's prompt.</p>
+
+        <form method="post" action="{% url 'mfa_signup_webauthn' %}" id="webauthn-signup-form">
+          {% csrf_token %}
+          {% for field in form %}
+          <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+            {{ field|addclass:"form-control" }}
+            {% for error in field.errors %}
+              <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+          </div>
+          {% endfor %}
+          <hr />
+          <button type="button" id="mfa_webauthn_signup" class="btn btn-outline-secondary btn-block">
+            Create Passkey
+          </button>
+          <div class="text-center mt-2">
+            <a href="{% url 'account_logout' %}">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_body %}
+{% include "mfa/webauthn/snippets/scripts.html" %}
+{{ js_data|json_script:"js_data" }}
+<script data-allauth-onload="allauth.webauthn.forms.signupForm" type="application/json">{
+  "ids": {
+    "signup": "mfa_webauthn_signup",
+    "credential": "{{ form.credential.auto_id }}",
+    "data": "js_data"
+  }
+}</script>
+{% endblock %}

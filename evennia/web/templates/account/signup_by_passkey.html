@@ -1,0 +1,55 @@
+{% extends "website/base.html" %}
+{% load addclass %}
+
+{% block titleblock %}Sign Up with Passkey{% endblock %}
+
+{% block body %}
+<div class="container main-content mt-4" id="main-copy">
+  <div class="row">
+    <div class="col-lg-5 offset-lg-3 col-sm-12">
+      <div class="card mt-3">
+        <div class="card-body">
+          <h1 class="card-title">Sign Up with Passkey</h1>
+          <p class="text-muted small">No password needed — your device will be your key.</p>
+          <hr />
+
+          {% if form.errors %}
+            {% for field in form %}
+              {% for error in field.errors %}
+                <div class="alert alert-danger" role="alert">{{ error }}</div>
+              {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+              <div class="alert alert-danger" role="alert">{{ error }}</div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="post" action="{% url 'account_signup_by_passkey' %}">
+            {% csrf_token %}
+            {{ redirect_field }}
+
+            {% for field in form %}
+            <div class="form-field my-3">
+              {{ field.label_tag }}
+              {{ field|addclass:"form-control" }}
+              {% if field.help_text %}
+                <small class="form-text text-muted">{{ field.help_text|safe }}</small>
+              {% endif %}
+            </div>
+            {% endfor %}
+
+            <hr />
+            <div class="form-group">
+              <input class="form-control btn btn-outline-secondary" type="submit" value="Continue" />
+            </div>
+          </form>
+
+          <div class="text-center mt-2 small">
+            <a href="{% url 'account_signup' %}">Sign up with a password instead</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
