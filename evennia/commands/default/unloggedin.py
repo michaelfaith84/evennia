@@ -235,18 +235,6 @@ class CmdUnconnectedConnect(COMMAND_DEFAULT_CLASS):
 
                     # Build the QR URL.
                     hostname = getattr(settings, "SERVER_HOSTNAME", "localhost")
-                    if hostname == "localhost":
-                        # Resolve to a routable LAN IP so phones on the same
-                        # network can reach the server. Falls back to localhost
-                        # if the network is unavailable.
-                        import socket as _socket
-
-                        try:
-                            with _socket.socket(_socket.AF_INET, _socket.SOCK_DGRAM) as _s:
-                                _s.connect(("8.8.8.8", 80))
-                                hostname = _s.getsockname()[0]
-                        except Exception:
-                            pass
                     webserver_ports = getattr(settings, "WEBSERVER_PORTS", [(4001, 4005)])
                     port = webserver_ports[0][0] if webserver_ports else 4001
                     scheme = "https" if port == 443 else "http"
