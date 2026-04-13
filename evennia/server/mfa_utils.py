@@ -42,10 +42,9 @@ def is_mfa_enabled(account):
     Returns:
         bool
     """
-    return (
-        get_mfa_authenticator(account, "totp") is not None
-        or get_mfa_authenticator(account, "recovery_codes") is not None
-    )
+    # Recovery codes are a backup mechanism, not an independent second factor.
+    # Only TOTP counts as active MFA for the telnet/GMCP login gate.
+    return get_mfa_authenticator(account, "totp") is not None
 
 
 def validate_totp_code(account, code):

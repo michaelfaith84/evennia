@@ -301,14 +301,24 @@ class CmdUnconnectedConnect(COMMAND_DEFAULT_CLASS):
         )
         if account:
             from evennia.server.mfa_utils import is_mfa_enabled
+            from evennia.server.pending_auth import _has_passwordless_methods
 
             if is_mfa_enabled(account):
-                # Store authenticated account and prompt for MFA code
+                # Store authenticated account and prompt for TOTP/recovery code.
                 session.ndb._mfa_pending_account = account
                 session.msg(
                     "\n|wThis account is protected by two-factor authentication.|n\n"
-                    "Enter your code with: |wtotp <code>|n\n"
+                    "Enter your code with: |wtotp/recovery <code>|n\n"
                     "(Use a 6-digit authenticator code or a recovery code.)"
+                )
+            elif _has_passwordless_methods(account):
+                # Account has a passkey or OAuth but no TOTP — password alone
+                # is not sufficient. Require the passkey as a second factor.
+                session.msg(
+                    "\n|wThis account is secured with a passkey.|n\n"
+                    "A password alone is not enough to log in.\n"
+                    "Type |wconnect %s|n (no password) to sign in with your passkey."
+                    % account.username
                 )
             else:
                 session.sessionhandler.login(session, account)
@@ -321,7 +331,7 @@ class CmdUnconnectedTOTP(COMMAND_DEFAULT_CLASS):
     Complete login with a two-factor authentication code.
 
     Usage (at login screen, after entering account/password):
-      totp <code>
+      totp/recovery <code>
 
     Enter the 6-digit code from your authenticator app, or one of your
     recovery codes. This command is only available after successfully
@@ -329,7 +339,7 @@ class CmdUnconnectedTOTP(COMMAND_DEFAULT_CLASS):
     """
 
     key = "totp"
-    aliases = ["2fa", "mfa"]
+    aliases = ["2fa", "mfa", "recovery"]
     locks = "cmd:all()"
     arg_regex = r"\s.*?|$"
 
@@ -344,7 +354,7 @@ class CmdUnconnectedTOTP(COMMAND_DEFAULT_CLASS):
 
         code = self.args.strip()
         if not code:
-            session.msg("Usage: |wtotp <code>|n")
+            session.msg("Usage: |wtotp/recovery <code>|n")
             return
 
         from evennia.server.mfa_utils import validate_mfa_code
