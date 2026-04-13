@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
-from .views import channels, characters, errors
+from .views import accounts, channels, characters, errors
 from .views import help as helpviews
 from .views import index
 
@@ -52,6 +52,9 @@ urlpatterns = [
         characters.CharacterDeleteView.as_view(),
         name="character-delete",
     ),
+    # Telnet device-auth (QR code passwordless login)
+    path("auth/device/<str:token>/", accounts.device_auth, name="device_auth"),
+    path("auth/device/<str:token>/complete/", accounts.device_complete, name="device_complete"),
 ]
 
 
