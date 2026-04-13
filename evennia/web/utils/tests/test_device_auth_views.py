@@ -1,4 +1,5 @@
 """Tests for device_auth and device_complete views."""
+
 import time
 
 from django.test import override_settings
@@ -16,9 +17,7 @@ class TestDeviceAuthView(BaseEvenniaTest):
         from evennia.utils.create import create_script
 
         username = username or self.account.username
-        script = create_script(
-            PendingAuthScript, key=f"pending_auth_{token}", persistent=False
-        )
+        script = create_script(PendingAuthScript, key=f"pending_auth_{token}", persistent=False)
         script.db.token = token
         script.db.username = username
         script.db.expires_at = time.time() + (-1 if expired else 300)
@@ -61,9 +60,7 @@ class TestDeviceCompleteView(BaseEvenniaTest):
         from evennia.utils.create import create_script
 
         username = username or self.account.username
-        script = create_script(
-            PendingAuthScript, key=f"pending_auth_{token}", persistent=False
-        )
+        script = create_script(PendingAuthScript, key=f"pending_auth_{token}", persistent=False)
         script.db.token = token
         script.db.username = username
         script.db.expires_at = time.time() + (-1 if expired else 300)

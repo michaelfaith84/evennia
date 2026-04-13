@@ -1,4 +1,5 @@
 """Tests for PendingAuthScript and related helpers."""
+
 import time
 
 from evennia.utils.test_resources import BaseEvenniaTest

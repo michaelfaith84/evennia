@@ -1,4 +1,5 @@
 """Tests for the device-auth branch of CmdUnconnectedConnect."""
+
 from unittest.mock import MagicMock, patch
 
 from django.test import override_settings

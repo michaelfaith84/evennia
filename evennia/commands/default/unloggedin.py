@@ -62,10 +62,7 @@ def _poll_device_auth(session, script_key):
     if script.is_expired():
         script.delete()
         session.ndb._pending_auth_script_key = None
-        session.msg(
-            "|RAuthentication timed out.|n\n"
-            "Use |wconnect <username>|n to try again."
-        )
+        session.msg("|RAuthentication timed out.|n\n" "Use |wconnect <username>|n to try again.")
         return
 
     if script.db.completed:
@@ -85,6 +82,7 @@ def _poll_device_auth(session, script_key):
     from twisted.internet import reactor
 
     reactor.callLater(3, _poll_device_auth, session, script_key)
+
 
 CONNECTION_SCREEN_MODULE = settings.CONNECTION_SCREEN_MODULE
 
