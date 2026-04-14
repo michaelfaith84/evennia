@@ -1029,7 +1029,8 @@ ACCOUNT_SIGNUP_FIELDS = ["username*", "password1*", "password2*"]
 MFA_SUPPORTED_TYPES = ["totp", "recovery_codes", "webauthn"]
 # Show the game name in authenticator apps (e.g. Google Authenticator)
 MFA_TOTP_ISSUER = SERVERNAME
-# Allow WebAuthn on non-HTTPS origins (localhost dev). Set False in production.
+# Allow WebAuthn on non-HTTPS origins (localhost dev). Auto-set False when
+# SERVER_HOSTNAME is a real domain (see auto-configuration block below).
 MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
 # Passkey login: players with a registered security key can log in without a password.
 MFA_PASSKEY_LOGIN_ENABLED = True
@@ -1040,6 +1041,21 @@ MFA_PASSKEY_SIGNUP_ENABLED = True
 # Timeout in seconds for telnet device-auth (QR code) sessions.
 # After this time the QR code expires and the player must reconnect and try again.
 DEVICE_AUTH_TIMEOUT = 300  # 5 minutes
+
+# Auto-configure HTTPS security settings based on SERVER_HOSTNAME.
+# When SERVER_HOSTNAME is a real domain (not localhost / 127.0.0.1), Evennia
+# assumes the site is served over HTTPS and tightens the relevant flags so
+# that WebAuthn (passkeys) and secure cookies work correctly without requiring
+# every game developer to set these manually.  Override any of these in your
+# own settings.py if you need different behaviour.
+_MFA_LOCALHOST_NAMES = ("localhost", "127.0.0.1", "::1")
+if SERVER_HOSTNAME not in _MFA_LOCALHOST_NAMES:
+    # Passkeys require a secure context — disable the localhost-only bypass.
+    MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = False
+    # Instruct browsers to only send session and CSRF cookies over HTTPS.
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+del _MFA_LOCALHOST_NAMES
 # URL that handles the media served from MEDIA_ROOT.
 # Example: "http://media.lawrence.com"
 MEDIA_URL = "/media/"
