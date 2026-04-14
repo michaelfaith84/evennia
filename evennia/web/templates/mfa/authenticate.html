@@ -3,7 +3,7 @@
 {% block titleblock %}Two-Factor Authentication{% endblock %}
 
 {% block body %}
-{% load addclass %}
+{% load addclass static %}
 <div class="container main-content mt-4" id="main-copy">
   <div class="row">
     <div class="col-lg-5 offset-lg-3 col-sm-12">
@@ -11,38 +11,68 @@
         <div class="card-body">
           <h1 class="card-title">Two-Factor Authentication</h1>
           <hr />
-          <p>Your account is protected by two-factor authentication. Please enter an authenticator code:</p>
 
-          <form method="post" action="{% url 'mfa_authenticate' %}">
-            {% csrf_token %}
-            {% for field in form %}
-            <div class="form-group">
-              <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
-              {{ field|addclass:"form-control" }}
-              {% if field.errors %}
-                {% for error in field.errors %}
-                  <div class="invalid-feedback d-block">{{ error }}</div>
-                {% endfor %}
-              {% endif %}
+          {% if "webauthn" in MFA_SUPPORTED_TYPES %}
+            {# Passkey / security key button — triggers WebAuthn JS #}
+            <div class="d-grid mb-3">
+              <button id="mfa_webauthn_authenticate" type="button" class="btn btn-outline-secondary">
+                Sign in with a passkey or security key
+              </button>
             </div>
-            {% endfor %}
-
             <hr />
-            <div class="form-group">
-              <input class="form-control btn btn-outline-secondary" type="submit" value="Sign In" />
-            </div>
-          </form>
+          {% endif %}
 
-          <div class="text-center small mt-2">
-            <a href="{% url 'mfa_view_recovery_codes' %}">Use a recovery code</a>
-          </div>
+          {% if form %}
+            <p class="text-muted small">Enter your 6-digit authenticator code, or a recovery code:</p>
+            <form method="post" action="{% url 'mfa_authenticate' %}">
+              {% csrf_token %}
+              {% for field in form %}
+              <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+                {{ field|addclass:"form-control" }}
+                {% if field.errors %}
+                  {% for error in field.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                  {% endfor %}
+                {% endif %}
+              </div>
+              {% endfor %}
+
+              <hr />
+              <div class="form-group">
+                <input class="form-control btn btn-outline-secondary" type="submit" value="Sign In" />
+              </div>
+            </form>
+          {% endif %}
+
+          {% if "webauthn" in MFA_SUPPORTED_TYPES %}
+            {# Hidden form that JS populates with the WebAuthn credential #}
+            <form id="webauthn_form" method="post" action="{% url 'mfa_authenticate' %}" style="display:none">
+              {% csrf_token %}
+              {% for field in webauthn_form %}
+                {{ field }}
+              {% endfor %}
+            </form>
+            {{ js_data|json_script:"js_data" }}
+            <script src="{% static 'mfa/js/webauthn-json.js' %}"></script>
+            <script src="{% static 'mfa/js/webauthn.js' %}"></script>
+            <script src="{% static 'account/js/onload.js' %}"></script>
+            <script data-allauth-onload="allauth.webauthn.forms.authenticateForm" type="application/json">{
+    "ids": {
+        "authenticate": "mfa_webauthn_authenticate",
+        "credential": "{{ webauthn_form.credential.auto_id }}",
+        "data": "js_data"
+    }
+}
+            </script>
+          {% endif %}
 
           <hr />
           <form method="post" action="{% url 'account_logout' %}">
             {% csrf_token %}
             <input type="hidden" name="next" value="{% url 'account_login' %}">
             <div class="text-center">
-              <button type="submit" class="btn btn-link btn-sm text-muted">Cancel and return to login</button>
+              <button type="submit" class="btn btn-link text-muted">Cancel and return to login</button>
             </div>
           </form>
         </div>
