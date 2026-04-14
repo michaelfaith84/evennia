@@ -96,4 +96,13 @@ class EvenniaAccountAdapter(DefaultAccountAdapter):
             account.set_unusable_password()
             account.save(update_fields=["password"])
 
+        # allauth's BaseSignupForm.save() discards our return value and
+        # continues to use the `user` object it passed in.  Populate it
+        # in-place so allauth sees a saved object with a valid pk.  This
+        # is required for passkey signup, which serialises the login into
+        # the session (via stash_login) before the WebAuthn ceremony
+        # completes — serialisation calls user_pk_to_url_str(user), which
+        # does int(user.pk) and crashes when pk is None.
+        user.__dict__.update(account.__dict__)
+
         return account
