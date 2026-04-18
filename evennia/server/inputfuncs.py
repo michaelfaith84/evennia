@@ -259,7 +259,7 @@ def client_options(session, *args, **kwargs):
         elif key == "screenwidth":
             flags["SCREENWIDTH"] = validate_size(value)
         elif key == "autoresize":
-            flags["AUTORESIZE"] = validate_size(value)
+            flags["AUTORESIZE"] = validate_bool(value)
         elif key == "inputdebug":
             flags["INPUTDEBUG"] = validate_bool(value)
         elif key == "nocolor":
@@ -498,8 +498,9 @@ def monitored(session, *args, **kwargs):
     Report on what is being monitored
 
     """
-    from evennia.scripts.monitorhandler import MONITOR_HANDLER
     import pickle
+
+    from evennia.scripts.monitorhandler import MONITOR_HANDLER
 
     def _safe_pickle(value):
         try:
